@@ -1,12 +1,11 @@
 
 ![SynthRain](https://github.com/user-attachments/assets/c786d30c-d05e-4f91-8c70-bbcd49b0d24b)
 
-
-
-
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A cyberpunk-inspired digital rain animation that brings the iconic matrix rain effect to life with modern web technologies. Create mesmerizing visual displays with customizable text, colors, and effects.
+
+https://github.com/user-attachments/assets/c1905cb2-9c41-4913-bd7c-5550415ce2a4
 
 ## ✨ Features
 
@@ -17,6 +16,10 @@ A cyberpunk-inspired digital rain animation that brings the iconic matrix rain e
   - Control character size
   - Toggle fullscreen mode
   - Hide/show interface
+ 
+![image_2025-02-24_06-59-00](https://github.com/user-attachments/assets/175b249c-9a08-46e3-836e-77ba20971710)
+
+    
 - 📸 **Media Capture**:
   - Take instant screenshots
   - Record video clips
@@ -44,6 +47,9 @@ That's it! No build process or dependencies required.
 - **Fullscreen Button**: Enter/exit fullscreen mode
 - **Camera Button**: Take a screenshot
 - **Record Button**: Capture video clips
+
+  ![image_2025-02-24_06-57-51](https://github.com/user-attachments/assets/8c2658e3-3bf1-421e-bf78-a0e124576141)
+
 
 ## 🛠️ Technical Details
 
