@@ -149,29 +149,33 @@ function initMediaRecorder() {
             return null;
         }
     } else {
-        // Desktop: Try MP4 first, then fall back to WebM
+        // Desktop: Try MP4/H.264 first
+        const mimeTypes = [
+            'video/mp4;codecs=h264,aac',
+            'video/mp4;codecs=h264',
+            'video/mp4',
+            'video/webm;codecs=h264',
+            'video/webm;codecs=vp8',
+            'video/webm'
+        ];
+
+        // Find first supported MIME type
+        const supportedType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+        
+        if (!supportedType) {
+            console.error('No supported video format found');
+            alert('Sorry, video recording is not supported in this browser.');
+            return null;
+        }
+
         try {
-            options.mimeType = 'video/mp4;codecs=h264';
+            options.mimeType = supportedType;
             mediaRecorder = new MediaRecorder(stream, options);
-            console.log('Using MP4 H264 on desktop');
-        } catch (e1) {
-            console.warn('MP4 not supported, trying WebM VP8:', e1);
-            try {
-                options.mimeType = 'video/webm;codecs=vp8';
-                mediaRecorder = new MediaRecorder(stream, options);
-                console.log('Using WebM VP8 on desktop');
-            } catch (e2) {
-                console.warn('WebM VP8 not supported, trying basic WebM:', e2);
-                try {
-                    options.mimeType = 'video/webm';
-                    mediaRecorder = new MediaRecorder(stream, options);
-                    console.log('Using basic WebM on desktop');
-                } catch (e3) {
-                    console.error('No supported video format found:', e3);
-                    alert('Sorry, video recording is not supported in this browser.');
-                    return null;
-                }
-            }
+            console.log('Using format:', supportedType);
+        } catch (e) {
+            console.error('Failed to initialize MediaRecorder:', e);
+            alert('Sorry, video recording failed to initialize.');
+            return null;
         }
     }
 
