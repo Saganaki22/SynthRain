@@ -85,4 +85,7 @@ Contributions are welcome! Feel free to submit issues and pull requests.
 Check out the live demo: [SynthRain Demo](https://github.com/Saganaki22/SynthRain)
 
 ---
+![og-image](https://github.com/user-attachments/assets/61f7ec47-e5d3-46d3-9fdf-befe024a6ba7)
+
+
 Made with 💚 by drbaph
