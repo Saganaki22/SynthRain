@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthRain - Digital Rain Animation</title>
+    <meta name="description" content="A cyberpunk-inspired digital rain animation with customizable colors, text, and effects.">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="SynthRain - Digital Rain Animation">
+    <meta property="og:description" content="A cyberpunk-inspired digital rain animation with customizable colors, text, and effects.">
+    <meta property="og:image" content="https://i.ibb.co/9kx5DD0W/og-image.jpg">
+    <meta property="og:url" content="https://github.com/Saganaki22/SynthRain">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SynthRain - Digital Rain Animation">
+    <meta name="twitter:description" content="A cyberpunk-inspired digital rain animation with customizable colors, text, and effects.">
+    <meta name="twitter:image" content="https://i.ibb.co/9kx5DD0W/og-image.jpg">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+    <link rel="manifest" href="favicon/site.webmanifest">
+    <meta name="theme-color" content="#00ff00">
+
+    <!-- Custom Font -->
+    <style>
+        @font-face {
+            font-family: 'Techfont';
+            src: url('font/Techfont.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        body {
+            font-family: 'Techfont', monospace;
+        }
+    </style>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            position: fixed;
+            width: 100%;
+        }
+        body {
+            background: black;
+            font-family: 'Techfont', monospace;
+        }
+        canvas {
+            display: block;
+        }
+        .input-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .text-container {
+            width: 300px;
+            margin: 0;
+        }
+
+        .controls-wrapper {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-label {
+            color: #0f0;
+            font-family: 'Techfont', monospace;
+            white-space: nowrap;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            width: 35px;
+            height: 35px;
+            padding: 0;
+            border: 1px solid #0f0;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .input-container {
+                flex-direction: column;
+                padding: 10px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+                gap: 4px;
+            }
+
+            .text-container {
+                width: 100%;
+            }
+
+            .controls-wrapper {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+                margin-top: 4px;
+            }
+
+            .control-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            input[type="range"] {
+                width: 70%;
+            }
+
+            input[type="color"] {
+                width: 30px;
+                height: 30px;
+            }
+        }
+        .input-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 90vw;
+            width: max-content;
+        }
+        .input-container.hidden {
+            transform: translateX(-50%) translateY(-140%);
+        }
+        .bottom-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 90vw;
+            width: max-content;
+        }
+        .bottom-container.hidden {
+            transform: translateX(-50%) translateY(140%);
+        }
+        #matrixText {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+            border-radius: 4px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: 'Techfont', monospace;
+        }
+        #matrixText:focus {
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        #toggleInput, #github-link {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #toggleInput:hover, #github-link:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Web view styles */
+        #toggleInput {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 57.5px;
+            height: 57.5px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            font-size: 28px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #toggleInput:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        #github-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1001;
+            width: 50px;
+            height: 50px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #github-link:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            #toggleInput, #github-link {
+                top: auto;
+                bottom: 140px;
+                width: 57.5px;
+                height: 57.5px;
+                font-size: 28px;
+                border-radius: 12px;
+            }
+            #toggleInput {
+                right: 20px;
+            }
+            #github-link {
+                right: 90px;
+            }
+            .bottom-container {
+                bottom: 20px;
+                gap: 15px;
+            }
+        }
+
+        /* Additional media query for small screens */
+        @media (max-width: 360px) {
+            #toggleInput, #github-link {
+                bottom: 135px;
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            #toggleInput {
+                right: 15px;
+            }
+            #github-link {
+                right: 75px;
+            }
+            .bottom-container {
+                bottom: 15px;
+                gap: 10px;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 320px) {
+            #toggleInput, #github-link {
+                bottom: 145px;
+                width: 45px;
+                height: 45px;
+                font-size: 22px;
+            }
+            #toggleInput {
+                right: 12px;
+            }
+            #github-link {
+                right: 67px;
+            }
+            .bottom-container {
+                bottom: 12px;
+                gap: 8px;
+            }
+        }
+        #matrixButton {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 8px;
+            width: 65px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 24px;
+        }
+
+        #matrixButton:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            #matrixButton {
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                font-size: 28px;
+            }
+        }
+        #recordButton {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        #recordButton:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+        #recordButton i {
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+        .control-button.recording {
+            background: rgba(255, 0, 0, 0.7);
+            border-color: red;
+            animation: recordingPulse 2s infinite;
+        }
+        
+        .control-button.recording i {
+            color: white;
+        }
+
+        @keyframes recordingPulse {
+            0% {
+                background: rgba(255, 0, 0, 0.7);
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+                transform: scale(1);
+            }
+            50% {
+                background: rgba(255, 0, 0, 0.9);
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+                transform: scale(1.05);
+            }
+            100% {
+                background: rgba(255, 0, 0, 0.7);
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+                transform: scale(1);
+            }
+        }
+        .control-button {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        .control-button:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+        .control-button i {
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+        .control-button.flashing {
+            animation: flash 0.5s ease-out;
+        }
+        @keyframes flash {
+            0% { 
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+                background: rgba(255, 255, 255, 0.3);
+            }
+            70% { 
+                box-shadow: 0 0 20px 15px rgba(255, 255, 255, 0);
+                background: rgba(0, 0, 0, 0.7);
+            }
+            100% { 
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+                background: rgba(0, 0, 0, 0.7);
+            }
+        }
+        @keyframes breathing {
+            0% { background: rgba(255, 0, 0, 0.2); }
+            50% { background: rgba(255, 0, 0, 0.6); }
+            100% { background: rgba(255, 0, 0, 0.2); }
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #333;
+            color: white;
+            border: 1px solid #666;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+        }
+        .control-label {
+            color: #0f0;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        #colorPicker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+        }
+        #colorPicker::-webkit-color-swatch {
+            border-radius: 4px;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+        #colorPicker::-moz-color-swatch {
+            border-radius: 4px;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+        #speedSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 6px;
+            background: rgba(0, 255, 0, 0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+        #speedSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #speedSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        #speedSlider::-webkit-slider-thumb:hover,
+        #speedSlider::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        #fontSlider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 6px;
+            background: rgba(0, 255, 0, 0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+        #fontSlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #fontSlider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #0f0;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        #fontSlider::-webkit-slider-thumb:hover,
+        #fontSlider::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        @media (max-width: 600px) {
+            .input-container {
+                padding: 15px;
+                gap: 15px;
+                width: 90vw;
+                border-radius: 12px;
+                clip-path: none;
+                -webkit-clip-path: none;
+                background: rgba(0, 0, 0, 0.9);
+                shape-outside: none;
+                -webkit-shape-outside: none;
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;
+                border-bottom-left-radius: 12px;
+                border-bottom-right-radius: 12px;
+            }
+            #matrixText {
+                font-size: 18px;
+                padding: 12px;
+                width: 100%;
+                height: 50px;
+                border-radius: 8px;
+            }
+            #matrixButton {
+                font-size: 18px;
+                padding: 12px 24px;
+                width: 100%;
+                height: 50px;
+                border-radius: 8px;
+            }
+            .controls-row {
+                gap: 15px;
+                width: 100%;
+            }
+            .control-group {
+                padding: 10px 15px;
+                width: 100%;
+                justify-content: space-between;
+                border-radius: 8px;
+            }
+            .control-label {
+                font-size: 16px;
+            }
+            #speedSlider {
+                width: calc(100% - 80px);
+                height: 8px;
+            }
+            #speedSlider::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            #speedSlider::-moz-range-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            #fontSlider {
+                width: calc(100% - 80px);
+                height: 8px;
+            }
+            #fontSlider::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            #fontSlider::-moz-range-thumb {
+                width: 24px;
+                height: 24px;
+            }
+            #colorPicker {
+                width: 45px;
+                height: 45px;
+                border-radius: 8px;
+            }
+        }
+        /* iPad and tablets */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            #toggleInput {
+                top: 50%;
+                transform: translateY(-50%);
+                right: 20px;
+                width: 57.5px;
+                height: 57.5px;
+                font-size: 28px;
+            }
+        }
+        #github-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #0f0;
+            font-size: 28px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 1000;
+            text-decoration: none;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #github-link:hover {
+            background: rgba(0, 255, 0, 0.2);
+            transform: scale(1.05);
+        }
+        #github-link.visible {
+            opacity: 1;
+        }
+        @media (max-width: 600px) {
+            #github-link {
+                width: 57.5px;
+                height: 57.5px;
+                font-size: 32px;
+            }
+        }
+        .text-container {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #matrixText {
+            width: 100%;
+            max-width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #0f0;
+            color: #0f0;
+            border-radius: 5px;
+            font-family: 'Techfont', monospace;
+            resize: none;
+            height: 50px;
+            box-sizing: border-box;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .input-container {
+                padding: 10px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            .text-container {
+                margin-bottom: 4px;
+            }
+
+            #matrixText {
+                height: 60px;
+                padding-top: 20px;
+            }
+        }
+
+        /* Small screens */
+        @media (max-width: 360px) {
+            .input-container {
+                padding: 8px;
+            }
+            
+            .text-container {
+                margin-bottom: 4px;
+            }
+
+            #matrixText {
+                height: 60px;
+                padding-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="input-container">
+        <div class="text-container">
+            <textarea id="matrixText" rows="4" cols="50" placeholder="Enter your text here...">₴Ɏ₦₮ⱧⱤ₳ł₦</textarea>
+        </div>
+        <div class="controls-wrapper">
+            <div class="control-group">
+                <span class="control-label">Color:</span>
+                <input type="color" id="colorPicker" value="#00ff00">
+            </div>
+            <div class="control-group">
+                <span class="control-label">Speed:</span>
+                <input type="range" id="speedSlider" min="50" max="300" value="50">
+            </div>
+            <div class="control-group">
+                <span class="control-label">Size:</span>
+                <input type="range" id="fontSlider" min="10" max="40" value="20">
+            </div>
+            <button id="matrixButton">
+                <i class="ph-bold ph-codesandbox-logo"></i>
+            </button>
+        </div>
+    </div>
+    <div class="bottom-container">
+        <button id="recordButton" class="control-button">
+            <i class="ph-bold ph-video-camera"></i>
+        </button>
+        <button id="photoButton" class="control-button">
+            <i class="ph-bold ph-camera"></i>
+        </button>
+        <button id="fullscreenButton" class="control-button">
+            <i class="ph-bold ph-corners-in"></i>
+        </button>
+    </div>
+    <a href="https://github.com/Saganaki22/SynthRain" id="github-link" target="_blank">
+        <i class="ph-bold ph-github-logo"></i>
+    </a>
+    <button id="toggleInput"><i class="ph-bold ph-eye"></i></button>
+    <canvas id="matrixCanvas"></canvas>
+    <script src="loading.js"></script>
+</body>
+</html>
