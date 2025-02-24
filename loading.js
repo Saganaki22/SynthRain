@@ -121,102 +121,284 @@ draw();
 let mediaRecorder;
 let recordedChunks = [];
 
-// Get supported MP4 MIME type
-function getSupportedMimeType() {
-    const types = [
-        'video/mp4;codecs=avc3,mp4a.40.2',  // Modern H.264 with AAC
-        'video/mp4;codecs=avc3',            // Modern H.264
-        'video/mp4;codecs=h264,mp4a.40.2',  // Standard H.264 with AAC
-        'video/mp4',                        // Let browser choose codecs
-        'video/webm;codecs=vp9,opus',       // Modern WebM fallback
-        'video/webm'                        // Basic WebM fallback
-    ];
-    
-    for (const type of types) {
-        if (MediaRecorder.isTypeSupported(type)) {
-            console.log('Using codec:', type);
-            return type;
-        }
-    }
-    console.warn('Falling back to WebM');
-    return 'video/webm';
-}
-
-// Initialize media recorder with max quality
 function initMediaRecorder() {
-    const stream = canvas.captureStream(60); // 60 FPS
+    // Detect mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // Set FPS based on device
+    const fps = isMobile ? 30 : 60;
+    const stream = canvas.captureStream(fps);
+    
+    // Configure options based on device
     const options = {
-        mimeType: getSupportedMimeType(),
-        videoBitsPerSecond: 8000000, // 8 Mbps
-        audioBitsPerSecond: 128000   // 128 kbps
+        videoBitsPerSecond: isMobile ? 3000000 : 8000000, // 3Mbps for mobile, 8Mbps for desktop
+        audioBitsPerSecond: 128000
     };
 
-    try {
-        mediaRecorder = new MediaRecorder(stream, options);
-        console.log('MediaRecorder initialized with:', mediaRecorder.mimeType);
-    } catch (e) {
-        console.error('Recording not supported:', e);
-        return;
+    let mediaRecorder = null;
+
+    if (isMobile) {
+        // Mobile: Try WebM first and only
+        try {
+            options.mimeType = 'video/webm;codecs=vp8';
+            mediaRecorder = new MediaRecorder(stream, options);
+            console.log('Using WebM VP8 on mobile');
+        } catch (e) {
+            console.error('WebM recording not supported on this mobile device:', e);
+            alert('Sorry, video recording is not supported on this device. Try using a different browser.');
+            return null;
+        }
+    } else {
+        // Desktop: Try MP4 first, then fall back to WebM
+        try {
+            options.mimeType = 'video/mp4;codecs=h264';
+            mediaRecorder = new MediaRecorder(stream, options);
+            console.log('Using MP4 H264 on desktop');
+        } catch (e1) {
+            console.warn('MP4 not supported, trying WebM VP8:', e1);
+            try {
+                options.mimeType = 'video/webm;codecs=vp8';
+                mediaRecorder = new MediaRecorder(stream, options);
+                console.log('Using WebM VP8 on desktop');
+            } catch (e2) {
+                console.warn('WebM VP8 not supported, trying basic WebM:', e2);
+                try {
+                    options.mimeType = 'video/webm';
+                    mediaRecorder = new MediaRecorder(stream, options);
+                    console.log('Using basic WebM on desktop');
+                } catch (e3) {
+                    console.error('No supported video format found:', e3);
+                    alert('Sorry, video recording is not supported in this browser.');
+                    return null;
+                }
+            }
+        }
     }
 
+    if (!mediaRecorder) return null;
+
+    let chunks = [];
+    let maxChunks = isMobile ? 30 : 1000; // Limit chunks on mobile
+    
     mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
-            recordedChunks.push(e.data);
+            chunks.push(e.data);
+            
+            // For mobile, maintain a rolling window of chunks
+            if (isMobile && chunks.length > maxChunks) {
+                const oldestChunk = chunks.shift();
+                if (oldestChunk) {
+                    URL.revokeObjectURL(oldestChunk);
+                }
+            }
         }
     };
+
+    mediaRecorder.onstop = () => {
+        const mimeType = mediaRecorder.mimeType;
+        const fileExtension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const filename = 'SynthRain-' + new Date().toISOString().slice(0,19).replace(/[-:]/g, '') + '.' + fileExtension;
+        
+        try {
+            const blob = new Blob(chunks, { type: mimeType });
+            chunks = [];
+            const url = URL.createObjectURL(blob);
+            
+            if (isMobile) {
+                showMobilePreview(url, blob, filename);
+            } else {
+                // Desktop download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 100);
+            }
+        } catch (e) {
+            console.error('Error creating video:', e);
+            alert('Failed to create video. Please try again with a shorter recording.');
+            chunks = [];
+        }
+    };
+
+    return mediaRecorder;
 }
 
-// Initialize recorder
-initMediaRecorder();
+// Separate function for mobile preview to keep code organized
+function showMobilePreview(url, blob, filename) {
+    // Create video preview element
+    const video = document.createElement('video');
+    video.src = url;
+    video.controls = true;
+    video.style.position = 'fixed';
+    video.style.top = '50%';
+    video.style.left = '50%';
+    video.style.transform = 'translate(-50%, -50%)';
+    video.style.maxWidth = '90%';
+    video.style.maxHeight = '70vh';
+    video.style.backgroundColor = 'black';
+    video.style.zIndex = '10000';
+    video.style.borderRadius = '8px';
+    video.style.border = '1px solid #0f0';
 
-mediaRecorder.addEventListener('stop', () => {
-    const mimeType = mediaRecorder.mimeType;
-    const isMP4 = mimeType.includes('mp4') || mimeType.includes('matroska');
-    const fileName = 'SynthRain-drbaph.' + (isMP4 ? 'mp4' : 'webm');
-    
-    const blob = new Blob(recordedChunks, { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    document.body.appendChild(a);
-    a.style.display = 'none';
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    recordedChunks = [];
-});
+    // Create modal container
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = '100%';
+    container.style.height = '100%';
+    container.style.backgroundColor = 'rgba(0,0,0,0.9)';
+    container.style.zIndex = '9999';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.alignItems = 'center';
+    container.style.justifyContent = 'center';
 
-// Add recording button handlers
+    // Create buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.display = 'flex';
+    buttonsContainer.style.gap = '10px';
+    buttonsContainer.style.marginTop = '20px';
+    buttonsContainer.style.flexWrap = 'wrap';
+    buttonsContainer.style.justifyContent = 'center';
+    buttonsContainer.style.padding = '0 20px';
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '<i class="ph-bold ph-x"></i>';
+    closeBtn.style.position = 'absolute';
+    closeBtn.style.top = '10px';
+    closeBtn.style.right = '10px';
+    closeBtn.style.backgroundColor = '#000';
+    closeBtn.style.border = '1px solid #0f0';
+    closeBtn.style.color = '#0f0';
+    closeBtn.style.width = '40px';
+    closeBtn.style.height = '40px';
+    closeBtn.style.borderRadius = '50%';
+    closeBtn.style.fontSize = '24px';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.display = 'flex';
+    closeBtn.style.alignItems = 'center';
+    closeBtn.style.justifyContent = 'center';
+
+    // Handle closing
+    const closeModal = () => {
+        document.body.removeChild(container);
+        URL.revokeObjectURL(url);
+    };
+    closeBtn.onclick = closeModal;
+
+    // Add share button (primary action on mobile)
+    const shareBtn = document.createElement('button');
+    shareBtn.innerHTML = '<i class="ph-bold ph-share"></i> Share';
+    shareBtn.style.padding = '10px 20px';
+    shareBtn.style.backgroundColor = '#000';
+    shareBtn.style.border = '1px solid #0f0';
+    shareBtn.style.color = '#0f0';
+    shareBtn.style.borderRadius = '5px';
+    shareBtn.style.fontFamily = 'Techfont, monospace';
+    shareBtn.style.cursor = 'pointer';
+    shareBtn.style.display = 'flex';
+    shareBtn.style.alignItems = 'center';
+    shareBtn.style.gap = '5px';
+
+    // Handle share
+    shareBtn.onclick = async () => {
+        try {
+            const file = new File([blob], filename, { type: blob.type });
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'SynthRain Recording',
+                });
+                closeModal(); // Close after successful share
+            } else {
+                throw new Error('Share not supported');
+            }
+        } catch (e) {
+            console.warn('Share failed, falling back to download:', e);
+            // Fall back to download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
+    };
+
+    // Add save button (backup option)
+    const saveBtn = document.createElement('button');
+    saveBtn.innerHTML = '<i class="ph-bold ph-download"></i> Save';
+    saveBtn.style.padding = '10px 20px';
+    saveBtn.style.backgroundColor = '#000';
+    saveBtn.style.border = '1px solid #0f0';
+    saveBtn.style.color = '#0f0';
+    saveBtn.style.borderRadius = '5px';
+    saveBtn.style.fontFamily = 'Techfont, monospace';
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.display = 'flex';
+    saveBtn.style.alignItems = 'center';
+    saveBtn.style.gap = '5px';
+
+    // Handle save
+    saveBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+    };
+
+    buttonsContainer.appendChild(shareBtn);
+    buttonsContainer.appendChild(saveBtn);
+    container.appendChild(video);
+    container.appendChild(buttonsContainer);
+    container.appendChild(closeBtn);
+    document.body.appendChild(container);
+
+    // Auto-play the preview
+    video.play().catch(console.error);
+}
+
+// Record button handler
 const recordButton = document.getElementById('recordButton');
-const recordIcon = recordButton.querySelector('i');
 let isRecording = false;
+let recordingTimeout;
 
-recordButton.onclick = () => {
+recordButton.addEventListener('click', () => {
     if (!isRecording) {
         // Start recording
-        recordedChunks = [];
-        try {
-            mediaRecorder.start();
-            isRecording = true;
-            recordButton.classList.add('recording', 'pulsing-element');
-            recordIcon.className = 'ph-bold ph-video-camera-slash';
-        } catch (e) {
-            console.error('Recording start error:', e);
-            alert('Failed to start recording. Your browser might not support this feature.');
+        mediaRecorder = initMediaRecorder();
+        if (!mediaRecorder) return; // Exit if initialization failed
+        
+        mediaRecorder.start(1000); // Record in 1-second chunks
+        isRecording = true;
+        recordButton.classList.add('recording');
+        recordButton.querySelector('i').className = 'ph-bold ph-stop-circle';
+        
+        // For mobile, limit recording duration to 30 seconds
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            recordingTimeout = setTimeout(() => {
+                if (isRecording) {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordButton.classList.remove('recording');
+                    recordButton.querySelector('i').className = 'ph-bold ph-video-camera';
+                }
+            }, 30000);
         }
     } else {
         // Stop recording
-        try {
-            mediaRecorder.stop();
-            isRecording = false;
-            recordButton.classList.remove('recording', 'pulsing-element');
-            recordIcon.className = 'ph-bold ph-video-camera';
-        } catch (e) {
-            console.error('Recording stop error:', e);
+        mediaRecorder.stop();
+        isRecording = false;
+        recordButton.classList.remove('recording');
+        recordButton.querySelector('i').className = 'ph-bold ph-video-camera';
+        if (recordingTimeout) {
+            clearTimeout(recordingTimeout);
         }
     }
-};
+});
 
 // Add photo capture functionality
 const photoButton = document.getElementById('photoButton');
